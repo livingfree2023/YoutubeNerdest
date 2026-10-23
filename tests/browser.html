@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Compact Stats verification</title>
+  <style>
+    body { color: #eee; background: #171717; font: 14px system-ui; padding: 24px; }
+    #results { line-height: 1.8; white-space: pre-wrap; }
+    .html5-video-player { position: relative; height: 260px; background: #263c34; }
+    .html5-video-info-panel { position: absolute; top: 10px; left: 10px; background: #111c; padding: 10px; width: 500px; color: white; font: 11px Arial; }
+    .html5-video-info-panel-content > div { display: flex; gap: 10px; }
+    .html5-video-info-panel-content > div > div { width: 120px; text-align: right; }
+    .ytp-sfn-close { position: absolute; top: 2px; right: 2px; }
+    #fixture { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Compact Stats verification</h1>
+  <p>Isolated module tests. Player stand-ins here are test-only; this is not a live YouTube test.</p>
+  <pre id="results">Running…</pre>
+  <div id="fixture"><div id="movie_player" class="html5-video-player"><video></video></div></div>
+  <script>
+    // Test-only boundary adapters for Tampermonkey and YouTube's player API.
+    const store = new Map();
+    let menu;
+    let remoteChange;
+    window.unsafeWindow = window;
+    window.GM_getValue = (key, fallback) => store.has(key) ? store.get(key) : fallback;
+    window.GM_setValue = (key, value) => store.set(key, value);
+    window.GM_registerMenuCommand = (label, callback) => { menu = {label, callback}; return 1; };
+    window.GM_unregisterMenuCommand = () => { menu = undefined; };
+    window.GM_addValueChangeListener = (key, callback) => { remoteChange = callback; };
+    const nativeMarkup = `<button class="ytp-sfn-close html5-video-info-panel-close" title="close">[X]</button>
+      <div class="html5-video-info-panel-content ytp-sfn-content">
+        <div><div>Video ID / sCPN</div><span>test-video / test-only</span></div>
+        <div><div>Viewport / Frames</div><span>1078x606 / 77 dropped of 20508</span></div>
+        <div style="display:none"><div>Shader Info</div><span></span></div>
+        <div><div>Connection Speed</div><span><span><div class="ytp-horizonchart"><canvas width="300" height="11"></canvas></div></span><span class="native-speed"> 151266 Kbps</span></span><span id="yt-speed-converter-mbps-display">(18.47 MB/s)</span></div>
+        <div><div>Network Activity</div><span>0 KB</span></div>
+        <div><div>Buffer Health</div><span>25.97 s</span></div>
+      </div>`;
+    let identity = 'first-video';
+    let showCalls = 0;
+    let nativeCloses = 0;
+    const player = document.getElementById('movie_player');
+    function makePanel(host = player) {
+      const panel = document.createElement('div');
+      panel.className = 'html5-video-info-panel ytp-sfn';
+      panel.innerHTML = nativeMarkup;
+      panel.querySelector('button').onclick = () => { nativeCloses++; panel.remove(); };
+      host.append(panel);
+      return panel;
+    }
+    player.getVideoData = () => ({video_id: identity});
+    player.showVideoInfo = () => { showCalls++; if (!player.querySelector('.html5-video-info-panel')) makePanel(); };
+    player.hideVideoInfo = () => player.querySelector('.html5-video-info-panel')?.remove();
+  </script>
+  <script src="../youtube-compact-stats.user.js"></script>
+  <script>
+    (async () => {
+      const lines = [];
+      const results = document.getElementById('results');
+      const tick = () => new Promise(resolve => setTimeout(resolve, 35));
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+        lines.push('PASS ' + message);
+        results.textContent = lines.join('\n');
+      }
+      try {
+        await tick();
+        let panel = player.querySelector('.html5-video-info-panel');
+        const content = panel.querySelector('.html5-video-info-panel-content');
+        const originalHTML = content.innerHTML;
+        const canvas = panel.querySelector('canvas');
+        assert(showCalls === 1 && panel, 'Auto-show defaults ON and opens once');
+        assert(menu.label.includes('ON'), 'Menu displays ON');
+        assert(panel.classList.contains('ytn-compact'), 'Panel starts compact');
+        assert(panel.querySelector('.ytn-speed').textContent === '151.27 Mbps', 'Decimal Mbps conversion excludes existing MB/s converter');
+        assert(getComputedStyle(content).display !== 'none' && getComputedStyle(content).visibility === 'hidden', 'Collapsed native content stays measurable while invisible');
+        assert(getComputedStyle(content).position === 'absolute' && getComputedStyle(content).width === 'max-content', 'Collapsed stats retain intrinsic width outside compact flow');
+        assert(getComputedStyle(content).pointerEvents === 'none', 'Invisible stats cannot intercept pointer input');
+        const canvasAttributes = canvas.outerHTML;
+        assert(getComputedStyle(panel).width !== '500px', 'Compact panel shrinks');
+        assert(panel.querySelector('.ytn-toolbar').firstElementChild.classList.contains('ytn-close'), 'Close button is on the left');
+        const compactClose = getComputedStyle(panel.querySelector('.ytn-close'));
+        const closeAnchor = [compactClose.position, compactClose.top, compactClose.left].join('/');
+        assert(getComputedStyle(panel.querySelector('.ytp-sfn-close')).display === 'none', 'Original close is hidden while enhanced');
+        panel.querySelector('.ytn-toggle').click();
+        await tick();
+        assert(!panel.classList.contains('ytn-compact'), 'Expand restores native layout');
+        assert(getComputedStyle(panel).width === '500px', 'Expanded dimensions restored');
+        assert(content.innerHTML === originalHTML && panel.querySelector('canvas') === canvas, 'Original DOM and chart identity preserved');
+        assert(getComputedStyle(content).visibility !== 'hidden' && getComputedStyle(content).position !== 'absolute', 'Expansion restores visible native layout');
+        assert(canvas.outerHTML === canvasAttributes, 'Expansion leaves native canvas dimensions untouched');
+        assert(panel.querySelector('.ytn-toggle').getAttribute('aria-expanded') === 'true', 'Accessible expanded state updates');
+        const expandedClose = getComputedStyle(panel.querySelector('.ytn-close'));
+        assert([expandedClose.position, expandedClose.top, expandedClose.left].join('/') === closeAnchor && expandedClose.display !== 'none', 'New close retains its top-left anchor when expanded');
+        assert(getComputedStyle(panel.querySelector('.ytp-sfn-close')).display === 'none', 'Expanded panel uses only the new close');
+        panel.querySelector('.ytn-toggle').click();
+        assert(panel.classList.contains('ytn-compact'), 'Collapse returns to compact');
+        assert(panel.querySelector('canvas') === canvas && canvas.outerHTML === canvasAttributes, 'Repeated collapse preserves the same canvas and attributes');
+        for (const [input, expected] of [['0 Kbps','0.00 Mbps'],['1,234,567 Kbps','1234.57 Mbps'],['1 234 Kbps','1.23 Mbps'],['500.5 Kbps','0.50 Mbps']]) {
+          panel.querySelector('.native-speed').textContent = input;
+          await tick();
+          assert(panel.querySelector('.ytn-speed').textContent === expected, 'Conversion: ' + input);
+        }
+        panel.querySelector('.native-speed').textContent = 'unavailable';
+        await tick();
+        assert(!panel.classList.contains('ytn-compact') && getComputedStyle(content).display !== 'none', 'Invalid speed falls back to native panel');
+        assert(getComputedStyle(content).visibility !== 'hidden' && getComputedStyle(content).position !== 'absolute', 'Invalid speed restores native content visibility and geometry');
+        assert(getComputedStyle(panel.querySelector('.ytp-sfn-close')).display !== 'none', 'Fallback restores native close when enhancement is unavailable');
+        panel.querySelector('.native-speed').textContent = '151266 Kbps';
+        await tick();
+        assert(panel.classList.contains('ytn-compact'), 'Live speed recovery restores compact mode');
+        let playerClicks = 0;
+        player.addEventListener('click', () => playerClicks++);
+        panel.querySelector('.ytn-toggle').click();
+        assert(playerClicks === 0, 'Controls do not bubble playback clicks');
+        panel.querySelector('.ytn-close').click();
+        await tick();
+        assert(!player.querySelector('.html5-video-info-panel') && nativeCloses === 1, 'Expanded left close uses native close');
+        player.querySelector('video').dispatchEvent(new Event('loadedmetadata'));
+        await tick();
+        assert(!player.querySelector('.html5-video-info-panel'), 'Metadata reload does not reopen dismissed stats for same video');
+        identity = 'second-video';
+        player.querySelector('video').dispatchEvent(new Event('loadedmetadata'));
+        await tick();
+        panel = player.querySelector('.html5-video-info-panel');
+        assert(panel && showCalls === 2, 'Next video auto-shows stats again');
+        assert(panel.querySelectorAll('.ytn-toolbar').length === 1, 'No duplicate controls');
+        menu.callback();
+        assert(store.get('autoShowStats') === false && menu.label.includes('OFF'), 'Menu OFF saves preference');
+        panel.querySelector('.ytp-sfn-close').click();
+        identity = 'third-video';
+        player.querySelector('video').dispatchEvent(new Event('loadedmetadata'));
+        await tick();
+        assert(!player.querySelector('.html5-video-info-panel'), 'OFF prevents next-video automatic display');
+        panel = makePanel();
+        await tick();
+        assert(panel.classList.contains('ytn-compact'), 'Manual stats still enhanced while auto-show is OFF');
+        menu.callback();
+        assert(store.get('autoShowStats') === true && menu.label.includes('ON'), 'Menu ON saves preference');
+        panel.remove();
+        await tick();
+        panel = makePanel();
+        await tick();
+        assert(panel.querySelectorAll('.ytn-toolbar').length === 1, 'Panel replacement gets exactly one toolbar');
+        const replacement = content.cloneNode(true);
+        replacement.querySelector('.native-speed').textContent = '42000 Kbps';
+        panel.querySelector('.html5-video-info-panel-content').replaceWith(replacement);
+        await tick();
+        assert(panel.querySelector('.ytn-speed').textContent === '42.00 Mbps', 'Replaced native content remains live');
+        panel.style.display = 'none';
+        await tick();
+        assert(getComputedStyle(panel).display === 'none', 'Native panel visibility is respected');
+        panel.style.display = '';
+        const detached = panel;
+        panel.remove();
+        await tick();
+        assert(!detached.querySelector('.ytn-toolbar') && !detached.classList.contains('ytn-compact'), 'Disconnected panels are cleaned up');
+        remoteChange('autoShowStats', true, false, true);
+        assert(menu.label.includes('OFF'), 'Preference updates from another tab apply');
+        let mutations = 0;
+        panel = makePanel();
+        await tick();
+        const observer = new MutationObserver(records => mutations += records.length);
+        observer.observe(panel, {childList:true, characterData:true, subtree:true, attributes:true});
+        panel.querySelector('.native-speed').textContent = '88000 Kbps';
+        await new Promise(resolve => setTimeout(resolve, 150));
+        observer.disconnect();
+        assert(mutations < 12, 'Live update has bounded mutations without observer feedback loop');
+        const previousCalls = showCalls;
+        player.remove();
+        await tick();
+        player.querySelector('video').dispatchEvent(new Event('loadedmetadata'));
+        await tick();
+        assert(showCalls === previousCalls, 'Disconnected player listeners cleaned up');
+        const newPlayer = player.cloneNode(false);
+        newPlayer.innerHTML = '<video></video>';
+        newPlayer.getVideoData = () => ({video_id:'replacement-video'});
+        newPlayer.showVideoInfo = () => { showCalls++; if (!newPlayer.querySelector('.html5-video-info-panel')) makePanel(newPlayer); };
+        document.getElementById('fixture').append(newPlayer);
+        await tick();
+        assert(!newPlayer.querySelector('.html5-video-info-panel'), 'OFF is respected for a replacement player');
+        menu.callback();
+        await tick();
+        assert(newPlayer.querySelector('.ytn-speed')?.textContent === '151.27 Mbps', 'Replacement player attaches and auto-shows when enabled');
+        results.textContent += '\n\n' + lines.length + ' checks passed.';
+        document.title = 'PASS — ' + lines.length + ' checks';
+      } catch (error) {
+        results.textContent += '\nFAIL ' + error.stack;
+        document.title = 'FAIL — Compact Stats';
+      }
+    })();
+  </script>
+</body>
+</html>
