@@ -12,9 +12,10 @@ A Tampermonkey script that folds YouTube’s **Stats for nerds** into a small, l
 
 ## Install
 
-- Install [Tampermonkey](https://www.tampermonkey.net/) for your browser.
-- [Install from Github](https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js)
+- You need [Tampermonkey](https://www.tampermonkey.net/) for your browser, skip if already have.
 - [Install from GreasyFork](https://greasyfork.org/zh-CN/scripts/601793-youtube-nerdest)
+- [Install from Github](https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js)
+
 
 ## Use
 
