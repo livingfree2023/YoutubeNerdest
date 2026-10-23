@@ -6,6 +6,7 @@ Tampermonkey enhancement for YouTube Stats for nerds.
 - Base feature: `specs/2026-10-23-compact-stats/`.
 - Animated toggle and close refinement: `specs/2026-10-23-animated-toggle/`.
 - Current fix: `specs/2026-10-23-chart-history/`.
+- Update metadata and distribution: `specs/2026-10-23-auto-update/`.
 - Static preview: `docs/prototype/compact-stats.html`.
 - Obtain visual approval before production implementation.
 - Read the existing stats DOM; do not request external data or alter playback.

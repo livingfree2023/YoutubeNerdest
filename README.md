@@ -12,6 +12,10 @@ Keep YouTube’s connection speed visible without covering the video with the fu
 
 ## Install
 
+With Tampermonkey installed, open the [installation link](https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js) and confirm installation. The script includes GitHub update URLs; keep automatic update checks enabled in Tampermonkey. Future releases use a higher script version.
+
+To install manually instead:
+
 1. Install Tampermonkey from your browser’s extension store.
 2. Open Tampermonkey’s dashboard and choose **Create a new script**.
 3. Replace the starter text with the complete contents of `youtube-nerdest.user.js`, then save.
