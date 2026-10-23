@@ -14,7 +14,7 @@ Keep YouTube’s connection speed visible without covering the video with the fu
 
 1. Install Tampermonkey from your browser’s extension store.
 2. Open Tampermonkey’s dashboard and choose **Create a new script**.
-3. Replace the starter text with the complete contents of `youtube-compact-stats.user.js`, then save.
+3. Replace the starter text with the complete contents of `youtube-nerdest.user.js`, then save.
 4. Reload a YouTube video page. The compact stats panel should appear automatically.
 
 ## Configuration

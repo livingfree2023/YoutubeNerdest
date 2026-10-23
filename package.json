@@ -5,7 +5,7 @@
   "license": "MIT",
   "description": "Development checks for a dependency-free Tampermonkey userscript",
   "scripts": {
-    "test": "node --check youtube-compact-stats.user.js && node tests/run.cjs"
+    "test": "node --check youtube-nerdest.user.js && node tests/run.cjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0"

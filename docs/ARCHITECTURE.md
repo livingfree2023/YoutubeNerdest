@@ -1,6 +1,6 @@
 # Architecture
 
-`youtube-compact-stats.user.js` is the installable source, without runtime dependencies, a backend or a build step.
+`youtube-nerdest.user.js` is the installable source, without runtime dependencies, a backend or a build step.
 
 - **Discovery:** one filtered document observer finds inserted/removed players and stats panels. Each panel has a content observer, which ignores its own controls.
 - **Read path:** parse the native numeric Kbps text, divide by 1000 and update a separate compact toolbar. No network operations.

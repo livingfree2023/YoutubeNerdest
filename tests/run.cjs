@@ -6,10 +6,10 @@ const assert = require('node:assert/strict');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 async function main() {
-  const source = fs.readFileSync(path.join(__dirname, '../youtube-compact-stats.user.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '../youtube-nerdest.user.js'), 'utf8');
   const fixture = fs.readFileSync(path.join(__dirname, 'browser.html'), 'utf8');
   // No external resources or browser access: run the local source in the test DOM.
-  const html = fixture.replace('<script src="../youtube-compact-stats.user.js"></script>',
+  const html = fixture.replace('<script src="../youtube-nerdest.user.js"></script>',
     () => `<script>${source}</script>`);
   const errors = [];
   const console = new VirtualConsole();
