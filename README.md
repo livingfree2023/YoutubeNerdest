@@ -32,3 +32,7 @@ The script makes no additional network requests and does not change video qualit
 Designed for desktop YouTube. YouTube can change its player; if a speed value cannot be recognized, the original stats panel remains available. If automatic opening is unavailable, open stats manually.
 
 Local behavior checks passed. Installation in Tampermonkey, fullscreen and theater mode still require verification in a browser with the extension installed.
+
+## License
+
+Released under the [MIT License](LICENSE).

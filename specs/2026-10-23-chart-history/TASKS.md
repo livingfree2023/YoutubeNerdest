@@ -13,4 +13,6 @@ Version 1.1.2 replaces display:none on stats content with visibility:hidden plus
 
 ## Repository delivery
 
-The user renamed the userscript to YouTube Nerdest and added its favicon metadata; both edits are preserved. At the user's request, initialized the local repository on `main` and created the private GitHub repository `livingfree2023/YoutubeNerdest` with `origin` configured. Initial delivery includes source, docs, specifications and local tests. `blog/`, `node_modules/`, `dist/` and `.DS_Store` are ignored. The latest suite passes all 59 assertions; installed-extension rendering limitations above remain unchanged.
+The user renamed the userscript to YouTube Nerdest and added its favicon metadata; both edits are preserved. At the user's request, initialized the local repository on `main`, pushed the initial delivery and made `livingfree2023/YoutubeNerdest` public. Initial delivery includes source, docs, specifications and local tests. `blog/`, `node_modules/`, `dist/` and `.DS_Store` are ignored. The suite passes all 59 assertions; installed-extension rendering limitations above remain unchanged.
+
+Added the standard MIT LICENSE with copyright attributed to the public account `livingfree2023`, matching `@license MIT` userscript and package metadata, and a README link. Userscript version is now 1.1.3 so metadata updates can be distinguished from 1.1.2. Runtime logic is unchanged; syntax and metadata consistency are the appropriate release checks for this update.

@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         YouTube Nerdest
 // @namespace    YoutubeNerdest
-// @version      1.1.2
+// @version      1.1.3
+// @license      MIT
 // @description  Fold Stats for nerds into a live Mbps indicator, with close, expand and automatic display controls.
 // @match        https://www.youtube.com/*
 // @match        https://www.youtube-nocookie.com/embed/*

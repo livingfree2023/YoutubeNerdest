@@ -2,6 +2,7 @@
   "name": "youtube-compact-stats",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Development checks for a dependency-free Tampermonkey userscript",
   "scripts": {
     "test": "node --check youtube-compact-stats.user.js && node tests/run.cjs"
