@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         YouTube Nerdest
 // @name:zh      YouTube Nerdest 油管速度快捷切换分辨率
+// @name:zh-CN   YouTube Nerdest 油管速度快捷切换分辨率
 // @namespace    YoutubeNerdest
-// @version      1.2.1
+// @version      1.2.2
 // @license      MIT
 // @updateURL    https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js
 // @downloadURL  https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js
 // @description  Compact live Mbps and resolution, with native quality shortcuts, animated expansion and automatic display controls.
+// @description:zh 将 YouTube「详细统计信息」折叠为显示整数 Mbps 连接速度和当前清晰度的小窗，展开可快捷切换可用分辨率，支持自动显示、展开动画和 Enhancer 主题配色。
+// @description:zh-CN 将 YouTube「详细统计信息」折叠为显示整数 Mbps 连接速度和当前清晰度的小窗，展开可快捷切换可用分辨率，支持自动显示、展开动画和 Enhancer 主题配色。
 // @match        https://www.youtube.com/*
 // @match        https://www.youtube-nocookie.com/embed/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
