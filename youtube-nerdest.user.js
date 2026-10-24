@@ -3,7 +3,7 @@
 // @name:zh      油管速度显示和快捷切换分辨率
 // @name:zh-CN   油管速度显示和快捷切换分辨率
 // @namespace    YoutubeNerdest
-// @version      1.2.2
+// @version      1.2.3
 // @license      MIT
 // @updateURL    https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js
 // @downloadURL  https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js
@@ -85,6 +85,8 @@
     .ytn-toolbar > .ytn-speed { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .ytn-current { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
     .ytn-current[hidden] { display: none; }
+    .ytn-current-badge[role="button"] { cursor: pointer; }
+    .ytn-current-badge[role="button"]:focus-visible { outline: 2px solid #72b7f4; outline-offset: 2px; }
     .ytn-badge { background: var(--efyt-accent-color, var(--yt-sys-color-baseline--static-brand-red, #f03)); color: #fff; border-radius: 2px; padding: 1px 3px; font: 700 12px/15px Arial, sans-serif; letter-spacing: -.4px; }
     .html5-video-info-panel > .ytn-quality-row {
       display: flex; align-items: center; gap: 6px; padding-top: 7px; margin-top: 8px;
@@ -211,6 +213,9 @@
     qualityStatus.setAttribute('role', 'status');
     let qualitySignature = '';
     let qualityTimer = null;
+    let compactCycleIndex = null;
+    let compactCycleSignature = '';
+    let compactCycleVideo = '';
     let expanded = false;
     let resizeAnimation = null;
     const cancelAnimation = () => {
@@ -250,6 +255,7 @@
             const activeApi = pagePlayer(panel.closest(PLAYER));
             // A video may have changed since this button was rendered.
             if (!availableQualities(activeApi).some(option => option.id === tier.id)) { render(); return; }
+            compactCycleIndex = null;
             try {
               // The old setPlaybackQuality export is a no-op in modern YouTube.
               activeApi.setPlaybackQualityRange(tier.id, tier.id);
@@ -273,6 +279,56 @@
       fitQualityRow();
     };
 
+    const cycleCompactQuality = event => {
+      if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      event.stopPropagation();
+      const player = panel.closest(PLAYER);
+      const api = pagePlayer(player);
+      const available = availableQualities(api);
+      const eligible = available.filter(tier => tier.height >= 1080);
+      if (eligible.length < 2) return;
+      const signature = eligible.map(tier => tier.id).join(',');
+      const identity = videoIdentity(player);
+      if (signature !== compactCycleSignature || identity !== compactCycleVideo) {
+        compactCycleIndex = null;
+        compactCycleSignature = signature;
+        compactCycleVideo = identity;
+      }
+      let nextIndex;
+      if (compactCycleIndex === null) {
+        let preferred = null;
+        try { preferred = api?.getPreferredQuality?.(); } catch { /* Effective dimensions still guide the first step. */ }
+        const effective = effectiveResolution(player, panel.querySelector(CONTENT));
+        const alreadyAtTop = preferred === eligible[0].id || effective?.height === eligible[0].height;
+        nextIndex = alreadyAtTop ? 1 : 0;
+      } else {
+        nextIndex = (compactCycleIndex + 1) % eligible.length;
+      }
+      const tier = eligible[nextIndex];
+      // Re-read availability immediately before requesting in case the video changed.
+      if (!availableQualities(pagePlayer(player)).some(option => option.id === tier.id)) {
+        compactCycleIndex = null;
+        render();
+        return;
+      }
+      try {
+        api.setPlaybackQualityRange(tier.id, tier.id);
+        compactCycleIndex = nextIndex;
+        qualityStatus.textContent = `${tier.label} requested`;
+      } catch {
+        qualityStatus.textContent = 'Could not change quality. Use YouTube settings.';
+      }
+      render();
+      clearTimeout(qualityTimer);
+      qualityTimer = setTimeout(() => { qualityTimer = null; render(); }, 250);
+    };
+    currentBadge.setAttribute('role', 'button');
+    currentBadge.setAttribute('tabindex', '0');
+    currentBadge.setAttribute('title', 'Cycle available resolutions from highest down to 1080p');
+    currentBadge.addEventListener('click', cycleCompactQuality);
+    currentBadge.addEventListener('keydown', cycleCompactQuality);
+
     const render = () => {
       if (!panel.isConnected) return;
       const content = panel.querySelector(CONTENT);
@@ -289,7 +345,7 @@
       if (resolution) {
         if (currentBadge.textContent !== resolution.label) currentBadge.textContent = resolution.label;
         currentBadge.classList.toggle('ytn-badge', Boolean(resolution.badge));
-        currentBadge.setAttribute('aria-label', `Current resolution: ${resolution.height}p`);
+        currentBadge.setAttribute('aria-label', `Current resolution: ${resolution.height}p. Click to cycle available resolutions from highest down to 1080p.`);
       }
       toggle.setAttribute('aria-expanded', String(expanded));
       const label = `${expanded ? 'Collapse' : 'Expand'} Stats for nerds`;

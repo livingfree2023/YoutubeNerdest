@@ -36,6 +36,8 @@
     .quality-button[aria-pressed="true"] { background: #ffffff20; border-bottom-color: #fff; }
     .quality-button:focus-visible { outline: 2px solid #72b7f4; outline-offset: -2px; }
     .quality-badge { background: var(--efyt-accent-color, var(--yt-sys-color-baseline--static-brand-red, #f03)); color: white; border-radius: 2px; padding: 1px 3px; font: 700 12px/15px Arial, sans-serif; letter-spacing: -.4px; }
+    .compact-resolution[role="button"] { cursor: pointer; }
+    .compact-resolution[role="button"]:focus-visible { outline: 2px solid #72b7f4; outline-offset: 2px; }
     .quality-button[hidden] { display: none; }
     .demo-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 20px; color: #bbb; font-size: 12px; }
     .demo-controls label { display: inline-flex; align-items: center; gap: 8px; }
@@ -62,7 +64,7 @@
     <div class="player" aria-label="Illustrative video area" style="--efyt-accent-color: #1e90ff">
       <div class="scene"></div>
       <details class="panel" open>
-        <summary aria-label="Toggle full Stats for nerds"><span class="preview-close" role="button" tabindex="0" aria-label="Close Stats for nerds">×</span><span class="speed"><span>151 Mbps</span><span aria-hidden="true">·</span><span class="compact-resolution quality-badge">2K</span></span><span class="arrow" aria-hidden="true"></span></summary>
+        <summary aria-label="Toggle full Stats for nerds"><span class="preview-close" role="button" tabindex="0" aria-label="Close Stats for nerds">×</span><span class="speed"><span>151 Mbps</span><span aria-hidden="true">·</span><span class="compact-resolution quality-badge" role="button" tabindex="0" aria-label="Current resolution: 1440p. Click to cycle video quality from the highest available down to 1080p." title="Click to cycle resolutions from highest down to 1080p">2K</span></span><span class="arrow" aria-hidden="true"></span></summary>
         <div class="original">
           <div class="stats">
           <div class="row"><span class="label">Video ID / sCPN</span><span class="value">mSkgZMKGIdE / 7EEM TFZ2 CJ21 522Q BK3G</span></div>
@@ -89,7 +91,7 @@
       <label>Panel width <input id="panel-width" type="range" min="280" max="500" value="500"><output for="panel-width">500 px</output></label>
     </div>
     <label class="preview-config"><input type="checkbox" checked>Show stats automatically</label>
-    <p class="hint">Prototype only: try the quality buttons, sample videos, theme and panel width. Badges follow the accent color. Only sample-available resolutions appear; 240p and 360p drop out when space is tight. These controls do not change a real video or your Enhancer settings.</p>
+    <p class="hint">Prototype only: while collapsed, click the resolution badge to cycle through available tiers from highest down to 1080p; lower tiers are skipped. From a tier below the maximum, the first click jumps to the highest. In expanded mode, try the quality buttons, sample videos, theme and panel width. Badges follow the accent color. Only sample-available resolutions appear; 240p and 360p drop out when space is tight. These controls do not change a real video or your Enhancer settings.</p>
   </main>
   <script>
     const panel = document.querySelector('.panel');
@@ -107,6 +109,7 @@
       '360': ['360p', '640x360'], '240': ['240p', '426x240'],
     };
     let selectedQuality = '2k';
+    let compactCycleIndex = null;
     function fitQualityRow() {
       const buttons = [...qualityRow.querySelectorAll('button')];
       buttons.forEach(button => { button.hidden = false; });
@@ -136,6 +139,7 @@
         button.append(text);
         button.addEventListener('click', () => {
           selectedQuality = key;
+          compactCycleIndex = null;
           qualityRow.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
           updateSampleResolution();
           fitQualityRow();
@@ -155,9 +159,30 @@
       const compactResolution = document.querySelector('.compact-resolution');
       compactResolution.textContent = tiers[currentTier][0];
       compactResolution.classList.toggle('quality-badge', Boolean(tiers[currentTier][2]));
-      compactResolution.setAttribute('aria-label', `Current resolution: ${current.split('x')[1]}p`);
+      compactResolution.setAttribute('aria-label', `Current resolution: ${current.split('x')[1]}p. Click to cycle available resolutions from highest down to 1080p.`);
     }
-    document.getElementById('sample-video').addEventListener('change', renderQuality);
+    function cycleCompactResolution(event) {
+      if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      event.stopPropagation();
+      const available = presets[document.getElementById('sample-video').value];
+      const eligible = available.filter(key => key !== 'auto' && Number(tiers[key][1].split('x')[1]) >= 1080);
+      if (eligible.length < 2) return;
+      const currentIndex = eligible.indexOf(selectedQuality);
+      // Start at the maximum unless already there; subsequent clicks step down and wrap.
+      compactCycleIndex = compactCycleIndex === null
+        ? (currentIndex === 0 ? 1 : 0)
+        : (compactCycleIndex + 1) % eligible.length;
+      const next = eligible[compactCycleIndex];
+      selectedQuality = next;
+      qualityRow.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.quality === next)));
+      updateSampleResolution();
+      fitQualityRow();
+    }
+    const compactResolution = document.querySelector('.compact-resolution');
+    compactResolution.addEventListener('click', cycleCompactResolution);
+    compactResolution.addEventListener('keydown', cycleCompactResolution);
+    document.getElementById('sample-video').addEventListener('change', () => { compactCycleIndex = null; renderQuality(); });
     document.getElementById('sample-theme').addEventListener('change', event => {
       const player = document.querySelector('.player');
       if (event.target.value) player.style.setProperty('--efyt-accent-color', event.target.value);
