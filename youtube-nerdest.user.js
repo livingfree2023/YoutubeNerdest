@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         YouTube Nerdest
 // @namespace    YoutubeNerdest
-// @version      1.1.4
+// @version      1.2.1
 // @license      MIT
 // @updateURL    https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js
 // @downloadURL  https://raw.githubusercontent.com/livingfree2023/YoutubeNerdest/main/youtube-nerdest.user.js
-// @description  Fold Stats for nerds into a live Mbps indicator, with close, expand and automatic display controls.
+// @description  Compact live Mbps and resolution, with native quality shortcuts, animated expansion and automatic display controls.
 // @match        https://www.youtube.com/*
 // @match        https://www.youtube-nocookie.com/embed/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
@@ -26,6 +26,16 @@
   const PANEL = '.html5-video-info-panel';
   const CONTENT = '.html5-video-info-panel-content';
   const KEY = 'autoShowStats';
+  const QUALITY_TIERS = [
+    { id: 'highres', height: 4320, label: '8K', badge: true },
+    { id: 'hd2160', height: 2160, label: '4K', badge: true },
+    { id: 'hd1440', height: 1440, label: '2K', badge: true },
+    { id: 'hd1080', height: 1080, label: 'HD', badge: true },
+    { id: 'hd720', height: 720, label: '720p' },
+    { id: 'large', height: 480, label: '480p' },
+    { id: 'medium', height: 360, label: '360p', optional: true },
+    { id: 'small', height: 240, label: '240p', optional: true },
+  ];
   const players = new Map();
   const panels = new Map();
   let autoShow = GM_getValue(KEY, true) !== false;
@@ -58,6 +68,7 @@
       justify-content: flex-end; pointer-events: none;
     }
     .html5-video-info-panel:not(.ytn-compact) > .ytn-toolbar > .ytn-speed { display: none; }
+    .html5-video-info-panel:not(.ytn-compact) > .ytn-toolbar > .ytn-current { display: none; }
     .ytn-toolbar > button {
       appearance: none; border: 0; border-radius: 2px; background: transparent;
       color: inherit; width: 24px; height: 28px; padding: 0;
@@ -68,6 +79,27 @@
     .ytn-toolbar > button:hover { background: #ffffff26; }
     .ytn-toolbar > button:focus-visible { outline: 2px solid #72b7f4; outline-offset: -2px; }
     .ytn-toolbar > .ytn-speed { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .ytn-current { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .ytn-current[hidden] { display: none; }
+    .ytn-badge { background: var(--efyt-accent-color, var(--yt-sys-color-baseline--static-brand-red, #f03)); color: #fff; border-radius: 2px; padding: 1px 3px; font: 700 12px/15px Arial, sans-serif; letter-spacing: -.4px; }
+    .html5-video-info-panel > .ytn-quality-row {
+      display: flex; align-items: center; gap: 6px; padding-top: 7px; margin-top: 8px;
+      border-top: 1px solid #ffffff25; overflow-x: auto; scrollbar-width: thin;
+      font: 11px Arial, sans-serif;
+    }
+    .html5-video-info-panel.ytn-compact > .ytn-quality-row,
+    .html5-video-info-panel > .ytn-quality-row[hidden] { display: none; }
+    .ytn-quality-row > button {
+      flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+      min-width: 32px; height: 28px; padding: 0 5px; border: 0;
+      border-bottom: 2px solid transparent; border-radius: 2px 2px 0 0;
+      color: #eee; background: transparent; font: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .ytn-quality-row > button:hover { background: #ffffff20; }
+    .ytn-quality-row > button[aria-pressed="true"] { background: #ffffff20; border-bottom-color: #fff; }
+    .ytn-quality-row > button:focus-visible { outline: 2px solid #72b7f4; outline-offset: -2px; }
+    .ytn-quality-row > button[hidden] { display: none; }
+    .ytn-quality-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .ytn-toggle::before {
       content: ''; width: 7px; height: 7px;
       border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor;
@@ -92,10 +124,50 @@
         const match = text.match(/^(\d+(?:[,\s]\d{3})*(?:\.\d+)?)\s*Kbps$/i);
         if (!match) continue;
         const kbps = Number(match[1].replace(/[,\s]/g, ''));
-        if (Number.isFinite(kbps)) return `${(kbps / 1000).toFixed(2)} Mbps`;
+        if (Number.isFinite(kbps)) return `${Math.round(kbps / 1000)} Mbps`;
       }
     }
     return null;
+  }
+
+  function effectiveResolution(player, content) {
+    let height = 0;
+    for (const row of content?.children || []) {
+      if (row.firstElementChild?.textContent.trim() !== 'Current / Optimal Res') continue;
+      const dimensions = row.querySelector('span')?.textContent.match(/^\s*(\d+)x(\d+)(?:@[\d.]+)?\s*\//);
+      if (dimensions) height = Math.min(Number(dimensions[1]), Number(dimensions[2]));
+      break;
+    }
+    if (!height) {
+      const video = player?.querySelector('video');
+      height = Math.min(video?.videoWidth || 0, video?.videoHeight || 0);
+    }
+    if (!height) {
+      try {
+        const id = pagePlayer(player)?.getPlaybackQuality?.();
+        height = QUALITY_TIERS.find(tier => tier.id === id)?.height || (id === 'tiny' ? 144 : 0);
+      } catch { /* Missing or initializing player: omit an unknown resolution. */ }
+    }
+    if (!height) return null;
+    return QUALITY_TIERS.find(tier => tier.height === height) || { label: `${height}p`, height };
+  }
+
+  function availableQualities(api) {
+    if (typeof api?.setPlaybackQualityRange !== 'function') return [];
+    let levels;
+    try { levels = api.getAvailableQualityLevels?.(); } catch { return []; }
+    if (!Array.isArray(levels)) return [];
+    let data = [];
+    try {
+      const result = api.getAvailableQualityData?.();
+      if (Array.isArray(result)) data = result;
+    } catch { /* Older players may expose only the native level list. */ }
+    const tiers = QUALITY_TIERS.filter(tier => {
+      if (!levels.includes(tier.id)) return false;
+      const entries = data.filter(item => item?.quality === tier.id);
+      return !entries.length || entries.some(item => item.isPlayable !== false);
+    });
+    return tiers.length ? [...tiers, { id: 'auto', label: 'Auto' }] : [];
   }
 
   function button(label, className) {
@@ -115,8 +187,26 @@
     close.textContent = '×';
     const speed = document.createElement('span');
     speed.className = 'ytn-speed';
+    const current = document.createElement('span');
+    current.className = 'ytn-current';
+    const separator = document.createElement('span');
+    separator.textContent = '·';
+    separator.setAttribute('aria-hidden', 'true');
+    const currentBadge = document.createElement('span');
+    currentBadge.className = 'ytn-current-badge';
+    current.append(separator, currentBadge);
     const toggle = button('Expand Stats for nerds', 'ytn-toggle');
-    toolbar.append(close, speed, toggle);
+    toolbar.append(close, speed, current, toggle);
+    const qualityRow = document.createElement('div');
+    qualityRow.className = 'ytn-quality-row';
+    qualityRow.setAttribute('role', 'group');
+    qualityRow.setAttribute('aria-label', 'Video quality');
+    qualityRow.hidden = true;
+    const qualityStatus = document.createElement('span');
+    qualityStatus.className = 'ytn-quality-status';
+    qualityStatus.setAttribute('role', 'status');
+    let qualitySignature = '';
+    let qualityTimer = null;
     let expanded = false;
     let resizeAnimation = null;
     const cancelAnimation = () => {
@@ -124,8 +214,65 @@
       resizeAnimation = null;
     };
 
+    const fitQualityRow = () => {
+      if (qualityRow.hidden || !expanded || !qualityRow.clientWidth) return;
+      const buttons = [...qualityRow.querySelectorAll('button')];
+      buttons.forEach(item => { item.hidden = false; });
+      for (const id of ['small', 'medium']) {
+        if (qualityRow.scrollWidth <= qualityRow.clientWidth) break;
+        const optional = buttons.find(item => item.dataset.quality === id);
+        if (optional?.getAttribute('aria-pressed') === 'false') optional.hidden = true;
+      }
+    };
+
+    const renderQualities = enabled => {
+      if (!enabled || !expanded) { qualityRow.hidden = true; return; }
+      const api = pagePlayer(panel.closest(PLAYER));
+      const tiers = availableQualities(api);
+      qualityRow.hidden = tiers.length === 0;
+      const signature = tiers.map(tier => tier.id).join(',');
+      if (signature !== qualitySignature) {
+        qualitySignature = signature;
+        qualityStatus.textContent = '';
+        qualityRow.replaceChildren();
+        for (const tier of tiers) {
+          const item = button(tier.height ? `${tier.label} (${tier.height}p)` : 'Automatic quality', 'ytn-quality-button');
+          item.dataset.quality = tier.id;
+          const label = document.createElement('span');
+          label.textContent = tier.label;
+          if (tier.badge) label.className = 'ytn-badge';
+          item.append(label);
+          item.addEventListener('click', () => {
+            const activeApi = pagePlayer(panel.closest(PLAYER));
+            // A video may have changed since this button was rendered.
+            if (!availableQualities(activeApi).some(option => option.id === tier.id)) { render(); return; }
+            try {
+              // The old setPlaybackQuality export is a no-op in modern YouTube.
+              activeApi.setPlaybackQualityRange(tier.id, tier.id);
+              qualityStatus.textContent = `${tier.label} requested`;
+            } catch {
+              qualityStatus.textContent = 'Could not change quality. Use YouTube settings.';
+            }
+            render();
+            clearTimeout(qualityTimer);
+            qualityTimer = setTimeout(() => { qualityTimer = null; render(); }, 250);
+          });
+          qualityRow.append(item);
+        }
+        qualityRow.append(qualityStatus);
+      }
+      let preferred = null;
+      try { preferred = api?.getPreferredQuality?.(); } catch { /* No fabricated selection state. */ }
+      qualityRow.querySelectorAll('button').forEach(item => {
+        item.setAttribute('aria-pressed', String(item.dataset.quality === preferred));
+      });
+      fitQualityRow();
+    };
+
     const render = () => {
-      const value = speedMbps(panel.querySelector(CONTENT));
+      if (!panel.isConnected) return;
+      const content = panel.querySelector(CONTENT);
+      const value = speedMbps(content);
       if (value === null) cancelAnimation();
       // Unknown markup leaves the native panel usable and visible.
       toolbar.hidden = value === null;
@@ -133,14 +280,22 @@
       panel.classList.toggle('ytn-enhanced', value !== null);
       panel.classList.toggle('ytn-compact', value !== null && !expanded);
       if (value !== null && speed.textContent !== value) speed.textContent = value;
+      const resolution = effectiveResolution(panel.closest(PLAYER), content);
+      current.hidden = resolution === null;
+      if (resolution) {
+        if (currentBadge.textContent !== resolution.label) currentBadge.textContent = resolution.label;
+        currentBadge.classList.toggle('ytn-badge', Boolean(resolution.badge));
+        currentBadge.setAttribute('aria-label', `Current resolution: ${resolution.height}p`);
+      }
       toggle.setAttribute('aria-expanded', String(expanded));
       const label = `${expanded ? 'Collapse' : 'Expand'} Stats for nerds`;
       toggle.setAttribute('aria-label', label);
       toggle.title = label;
+      renderQualities(value !== null);
     };
     // Do not let player keyboard shortcuts, double-click or pointer gestures fire.
     for (const type of ['pointerdown', 'mousedown', 'dblclick', 'keydown', 'keyup', 'click']) {
-      toolbar.addEventListener(type, event => event.stopPropagation());
+      for (const controls of [toolbar, qualityRow]) controls.addEventListener(type, event => event.stopPropagation());
     }
     toggle.addEventListener('click', () => {
       // Measure the current animated size before canceling, so rapid reversals
@@ -161,6 +316,7 @@
     });
     close.addEventListener('click', () => {
       cancelAnimation();
+      clearTimeout(qualityTimer);
       const player = panel.closest(PLAYER);
       const state = players.get(player);
       if (state) state.dismissed = true;
@@ -168,12 +324,19 @@
       if (nativeClose) nativeClose.click();
       else pagePlayer(player)?.hideVideoInfo?.();
     });
-    panel.append(toolbar);
+    panel.append(toolbar, qualityRow);
+    const resizeObserver = window.ResizeObserver ? new ResizeObserver(fitQualityRow) : null;
+    resizeObserver?.observe(qualityRow);
     const observer = new MutationObserver(records => {
-      if (records.some(record => !toolbar.contains(record.target))) render();
+      if (records.some(record => !toolbar.contains(record.target) && !qualityRow.contains(record.target))) render();
     });
     observer.observe(panel, { childList: true, characterData: true, subtree: true });
-    panels.set(panel, { toolbar, observer, cancelAnimation });
+    const dispose = () => {
+      cancelAnimation();
+      clearTimeout(qualityTimer);
+      resizeObserver?.disconnect();
+    };
+    panels.set(panel, { toolbar, qualityRow, observer, dispose, render });
     render();
   }
 
@@ -228,6 +391,7 @@
       state.opened = false;
     }
     beginAutoShow(player, state);
+    player.querySelectorAll(PANEL).forEach(panel => panels.get(panel)?.render());
   }
 
   function attachPlayer(player) {
@@ -249,9 +413,10 @@
     queued = false;
     for (const [panel, state] of panels) {
       if (!panel.isConnected) {
-        state.cancelAnimation();
+        state.dispose();
         state.observer.disconnect();
         state.toolbar.remove();
+        state.qualityRow.remove();
         panel.classList.remove('ytn-compact', 'ytn-enhanced');
         panels.delete(panel);
       }
@@ -314,7 +479,7 @@
     if (event.persisted) return;
     discovery.disconnect();
     for (const state of panels.values()) {
-      state.cancelAnimation();
+      state.dispose();
       state.observer.disconnect();
     }
     for (const [player, state] of players) {

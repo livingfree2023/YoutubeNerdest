@@ -1,6 +1,6 @@
 # YouTube Nerdest
 
-A Tampermonkey script that folds YouTube’s **Stats for nerds** into a small, live connection-speed display in Mbps.
+A Tampermonkey script that folds YouTube’s **Stats for nerds** into a small display of whole-number Mbps and the current resolution.
 
 **Compact**
 
@@ -20,6 +20,7 @@ A Tampermonkey script that folds YouTube’s **Stats for nerds** into a small, l
 ## Use
 
 - **› / ‹** expands or collapses the stats with a smooth animation.
+- In the expanded panel, select an available resolution or **Auto**. High-resolution badges follow your Enhancer theme color, with red as the default. Optional low-resolution buttons appear when space allows.
 - **×** closes the panel for the current video.
 - Stats show automatically by default. Toggle **Show stats automatically** in Tampermonkey’s menu; your choice is saved.
 

@@ -75,7 +75,7 @@
         assert(showCalls === 1 && panel, 'Auto-show defaults ON and opens once');
         assert(menu.label.includes('ON'), 'Menu displays ON');
         assert(panel.classList.contains('ytn-compact'), 'Panel starts compact');
-        assert(panel.querySelector('.ytn-speed').textContent === '151.27 Mbps', 'Decimal Mbps conversion excludes existing MB/s converter');
+        assert(panel.querySelector('.ytn-speed').textContent === '151 Mbps', 'Whole Mbps conversion excludes existing MB/s converter');
         assert(getComputedStyle(content).display !== 'none' && getComputedStyle(content).visibility === 'hidden', 'Collapsed native content stays measurable while invisible');
         assert(getComputedStyle(content).position === 'absolute' && getComputedStyle(content).width === 'max-content', 'Collapsed stats retain intrinsic width outside compact flow');
         assert(getComputedStyle(content).pointerEvents === 'none', 'Invisible stats cannot intercept pointer input');
@@ -99,7 +99,7 @@
         panel.querySelector('.ytn-toggle').click();
         assert(panel.classList.contains('ytn-compact'), 'Collapse returns to compact');
         assert(panel.querySelector('canvas') === canvas && canvas.outerHTML === canvasAttributes, 'Repeated collapse preserves the same canvas and attributes');
-        for (const [input, expected] of [['0 Kbps','0.00 Mbps'],['1,234,567 Kbps','1234.57 Mbps'],['1 234 Kbps','1.23 Mbps'],['500.5 Kbps','0.50 Mbps']]) {
+        for (const [input, expected] of [['0 Kbps','0 Mbps'],['1,234,567 Kbps','1235 Mbps'],['1 234 Kbps','1 Mbps'],['500.5 Kbps','1 Mbps']]) {
           panel.querySelector('.native-speed').textContent = input;
           await tick();
           assert(panel.querySelector('.ytn-speed').textContent === expected, 'Conversion: ' + input);
@@ -149,7 +149,7 @@
         replacement.querySelector('.native-speed').textContent = '42000 Kbps';
         panel.querySelector('.html5-video-info-panel-content').replaceWith(replacement);
         await tick();
-        assert(panel.querySelector('.ytn-speed').textContent === '42.00 Mbps', 'Replaced native content remains live');
+        assert(panel.querySelector('.ytn-speed').textContent === '42 Mbps', 'Replaced native content remains live');
         panel.style.display = 'none';
         await tick();
         assert(getComputedStyle(panel).display === 'none', 'Native panel visibility is respected');
@@ -184,7 +184,7 @@
         assert(!newPlayer.querySelector('.html5-video-info-panel'), 'OFF is respected for a replacement player');
         menu.callback();
         await tick();
-        assert(newPlayer.querySelector('.ytn-speed')?.textContent === '151.27 Mbps', 'Replacement player attaches and auto-shows when enabled');
+        assert(newPlayer.querySelector('.ytn-speed')?.textContent === '151 Mbps', 'Replacement player attaches and auto-shows when enabled');
         results.textContent += '\n\n' + lines.length + ' checks passed.';
         document.title = 'PASS — ' + lines.length + ' checks';
       } catch (error) {

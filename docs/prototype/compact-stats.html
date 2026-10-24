@@ -16,7 +16,7 @@
     summary { list-style: none; cursor: pointer; min-height: 32px; display: flex; align-items: center; gap: 12px; padding: 0 9px 0 40px; user-select: none; }
     summary::-webkit-details-marker { display: none; }
     summary:focus-visible { outline: 2px solid #72b7f4; outline-offset: 3px; }
-    .speed { font-size: 13px; font-variant-numeric: tabular-nums; }
+    .speed { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 13px; font-variant-numeric: tabular-nums; }
     .preview-close { position: absolute; top: 2px; left: 4px; display: inline-flex; width: 24px; height: 28px; align-items: center; justify-content: center; font-size: 19px; cursor: pointer; }
     .preview-close:hover { background: #ffffff26; }
     .preview-close:focus-visible { outline: 2px solid #72b7f4; }
@@ -28,7 +28,20 @@
     details[open] summary .speed { display: none; }
     details[open] .arrow { transform: rotate(225deg); }
     @media (prefers-reduced-motion: reduce) { .arrow { transition: none; } }
-    .original { padding: 8px 34px 8px 10px; width: 500px; max-width: calc(100vw - 70px); line-height: 14px; }
+    .original { padding: 8px 10px; width: var(--preview-width, 500px); max-width: calc(100vw - 70px); line-height: 14px; }
+    .stats { overflow-x: auto; scrollbar-width: thin; }
+    .quality-row { display: flex; align-items: center; gap: 6px; padding-top: 7px; margin-top: 8px; border-top: 1px solid #ffffff25; overflow-x: auto; scrollbar-width: thin; }
+    .quality-button { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 28px; padding: 0 5px; border: 0; border-bottom: 2px solid transparent; border-radius: 2px 2px 0 0; color: #eee; background: transparent; font: 11px Arial, sans-serif; cursor: pointer; white-space: nowrap; }
+    .quality-button:hover { background: #ffffff20; }
+    .quality-button[aria-pressed="true"] { background: #ffffff20; border-bottom-color: #fff; }
+    .quality-button:focus-visible { outline: 2px solid #72b7f4; outline-offset: -2px; }
+    .quality-badge { background: var(--efyt-accent-color, var(--yt-sys-color-baseline--static-brand-red, #f03)); color: white; border-radius: 2px; padding: 1px 3px; font: 700 12px/15px Arial, sans-serif; letter-spacing: -.4px; }
+    .quality-button[hidden] { display: none; }
+    .demo-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 20px; color: #bbb; font-size: 12px; }
+    .demo-controls label { display: inline-flex; align-items: center; gap: 8px; }
+    .demo-controls select { background: #242424; color: #eee; border: 1px solid #444; border-radius: 4px; padding: 5px 8px; font: inherit; }
+    .demo-controls input { accent-color: #aaa; width: 120px; }
+    .demo-controls output { min-width: 38px; font-variant-numeric: tabular-nums; }
     .row { display: flex; gap: 8px; white-space: nowrap; }
     .label { width: 114px; text-align: right; flex-shrink: 0; }
     .value { min-width: 0; }
@@ -36,24 +49,25 @@
     .network { background: linear-gradient(90deg, #24617a 60%, #409cba 60%, #409cba 68%, #152d35 68%); }
     .buffer { background: #e99c4f; }
     .timeline { position: absolute; bottom: 28px; left: 12px; right: 12px; height: 3px; background: #ffffff40; }
-    .timeline::before { content: ''; display: block; width: 65%; height: 100%; background: #f4a561; }
+    .timeline::before { content: ''; display: block; width: 65%; height: 100%; background: var(--efyt-accent-color, var(--yt-sys-color-baseline--static-brand-red, #f03)); }
     .caption { position: absolute; bottom: 8px; left: 12px; font-size: 10px; color: #ddd; }
     .hint { margin-top: 16px; }
-    @media(max-width: 600px) { main { margin-top: 28px; padding: 0 12px; } .player { aspect-ratio: 4/3; } .original { width: 455px; font-size: 9px; overflow: auto; } .label { width: 94px; } .meter { width: 140px; } }
+    @media(max-width: 600px) { main { margin-top: 28px; padding: 0 12px; } .player { aspect-ratio: 4/3; } .original { font-size: 9px; } .label { width: 94px; } .meter { width: 140px; } .demo-controls { gap: 12px; } }
   </style>
 </head>
 <body>
   <main>
     <h1>A smaller Stats for nerds</h1>
-    <p>Connection speed at a glance. Open the chevron to see the full panel.</p>
-    <div class="player" aria-label="Illustrative video area">
+    <p>Connection speed at a glance. Quality shortcuts when you need them.</p>
+    <div class="player" aria-label="Illustrative video area" style="--efyt-accent-color: #1e90ff">
       <div class="scene"></div>
-      <details class="panel">
-        <summary aria-label="Toggle full Stats for nerds"><span class="preview-close" role="button" tabindex="0" aria-label="Close Stats for nerds">×</span><span class="speed">151.27 Mbps</span><span class="arrow" aria-hidden="true"></span></summary>
+      <details class="panel" open>
+        <summary aria-label="Toggle full Stats for nerds"><span class="preview-close" role="button" tabindex="0" aria-label="Close Stats for nerds">×</span><span class="speed"><span>151 Mbps</span><span aria-hidden="true">·</span><span class="compact-resolution quality-badge">2K</span></span><span class="arrow" aria-hidden="true"></span></summary>
         <div class="original">
+          <div class="stats">
           <div class="row"><span class="label">Video ID / sCPN</span><span class="value">mSkgZMKGIdE / 7EEM TFZ2 CJ21 522Q BK3G</span></div>
           <div class="row"><span class="label">Viewport / Frames</span><span class="value">1078x606 / 77 dropped of 20508</span></div>
-          <div class="row"><span class="label">Current / Optimal Res</span><span class="value">2560x1440@25 / 2560x1440@25</span></div>
+          <div class="row"><span class="label">Current / Optimal Res</span><span class="value" id="sample-resolution">2560x1440@25 / 3840x2160@25</span></div>
           <div class="row"><span class="label">Volume / Normalized</span><span class="value">100%/100% DRC (cont.-19.0dB tgt.-14.0dB)</span></div>
           <div class="row"><span class="label">Codecs</span><span class="value">av01.0.12M.08 (400) / opus (251)</span></div>
           <div class="row"><span class="label">Color</span><span class="value">bt709 / bt709</span></div>
@@ -62,17 +76,103 @@
           <div class="row"><span class="label">Buffer Health</span><span class="value"><i class="meter buffer"></i>25.97 s</span></div>
           <div class="row"><span class="label">Mystery Text</span><span class="value">USDAI, SABR, s:4 t:981.83 b:442.981-1007.800</span></div>
           <div class="row"><span class="label">Date</span><span class="value">Fri Oct 23 2026 06:40:40 GMT-0700</span></div>
+          </div>
+          <div class="quality-row" role="group" aria-label="Video quality"></div>
         </div>
       </details>
       <div class="timeline"></div>
       <div class="caption">Static visual preview · sample stats from your supplied HTML</div>
     </div>
+    <div class="demo-controls" aria-label="Prototype preview settings">
+      <label>Sample video <select id="sample-video"><option value="4k">Up to 4K</option><option value="8k">Up to 8K</option><option value="hd">Up to 1080p</option></select></label>
+      <label>Theme <select id="sample-theme"><option value="">YouTube red</option><option value="#1e90ff" selected>Enhancer blue</option><option value="#a855f7">Purple</option><option value="#228b22">Green</option></select></label>
+      <label>Panel width <input id="panel-width" type="range" min="280" max="500" value="500"><output for="panel-width">500 px</output></label>
+    </div>
     <label class="preview-config"><input type="checkbox" checked>Show stats automatically</label>
-    <p class="hint">Auto-show defaults to on. In the userscript, change it from Tampermonkey’s menu. Click the chevron to expand or collapse. Values and charts here are illustrative; the userscript will read YouTube’s live stats. Closing keeps the overlay hidden for this video.</p>
+    <p class="hint">Prototype only: try the quality buttons, sample videos, theme and panel width. Badges follow the accent color. Only sample-available resolutions appear; 240p and 360p drop out when space is tight. These controls do not change a real video or your Enhancer settings.</p>
   </main>
   <script>
     const panel = document.querySelector('.panel');
     const close = document.querySelector('.preview-close');
+    const qualityRow = document.querySelector('.quality-row');
+    const presets = {
+      '8k': ['8k', '4k', '2k', 'hd', '720', '480', '360', '240'],
+      '4k': ['4k', '2k', 'hd', '720', '480', '360', '240'],
+      'hd': ['hd', '720', '480', '360', '240'],
+    };
+    const tiers = {
+      '8k': ['8K', '7680x4320', true], '4k': ['4K', '3840x2160', true],
+      '2k': ['2K', '2560x1440', true], 'hd': ['HD', '1920x1080', true],
+      '720': ['720p', '1280x720'], '480': ['480p', '854x480'],
+      '360': ['360p', '640x360'], '240': ['240p', '426x240'],
+    };
+    let selectedQuality = '2k';
+    function fitQualityRow() {
+      const buttons = [...qualityRow.querySelectorAll('button')];
+      buttons.forEach(button => { button.hidden = false; });
+      if (!qualityRow.clientWidth) return;
+      for (const tier of ['240', '360']) {
+        if (qualityRow.scrollWidth <= qualityRow.clientWidth) break;
+        const optional = buttons.find(button => button.dataset.quality === tier);
+        // Never hide the active selection; retain scrolling if necessary.
+        if (optional && optional.getAttribute('aria-pressed') !== 'true') optional.hidden = true;
+      }
+    }
+    function renderQuality() {
+      const available = presets[document.getElementById('sample-video').value];
+      if (selectedQuality !== 'auto' && !available.includes(selectedQuality)) selectedQuality = 'auto';
+      qualityRow.replaceChildren();
+      for (const key of [...available, 'auto']) {
+        const [label, resolution, badge] = tiers[key] || ['Auto'];
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'quality-button';
+        button.dataset.quality = key;
+        button.setAttribute('aria-label', key === 'auto' ? 'Automatic quality' : `${label} (${resolution.split('x')[1]}p)`);
+        button.setAttribute('aria-pressed', String(selectedQuality === key));
+        const text = document.createElement('span');
+        if (badge) text.className = 'quality-badge';
+        text.textContent = label;
+        button.append(text);
+        button.addEventListener('click', () => {
+          selectedQuality = key;
+          qualityRow.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+          updateSampleResolution();
+          fitQualityRow();
+        });
+        qualityRow.append(button);
+      }
+      updateSampleResolution();
+      fitQualityRow();
+    }
+    function updateSampleResolution() {
+      const available = presets[document.getElementById('sample-video').value];
+      const optimal = tiers[available[0]][1];
+      const current = selectedQuality === 'auto' ? optimal : tiers[selectedQuality][1];
+      document.getElementById('sample-resolution').textContent = `${current}@25 / ${optimal}@25`;
+      // Auto still shows the effective sample resolution, not the mode name.
+      const currentTier = selectedQuality === 'auto' ? available[0] : selectedQuality;
+      const compactResolution = document.querySelector('.compact-resolution');
+      compactResolution.textContent = tiers[currentTier][0];
+      compactResolution.classList.toggle('quality-badge', Boolean(tiers[currentTier][2]));
+      compactResolution.setAttribute('aria-label', `Current resolution: ${current.split('x')[1]}p`);
+    }
+    document.getElementById('sample-video').addEventListener('change', renderQuality);
+    document.getElementById('sample-theme').addEventListener('change', event => {
+      const player = document.querySelector('.player');
+      if (event.target.value) player.style.setProperty('--efyt-accent-color', event.target.value);
+      else player.style.removeProperty('--efyt-accent-color');
+    });
+    document.getElementById('panel-width').addEventListener('input', event => {
+      animation?.cancel();
+      panel.style.setProperty('--preview-width', `${event.target.value}px`);
+      document.querySelector('output').textContent = `${event.target.value} px`;
+      fitQualityRow();
+    });
+    if (window.ResizeObserver) new ResizeObserver(fitQualityRow).observe(qualityRow);
+    window.addEventListener('resize', fitQualityRow);
+    panel.addEventListener('toggle', fitQualityRow);
+    renderQuality();
     let animation;
     document.querySelector('summary').addEventListener('click', event => {
       if (event.target.closest('.preview-close')) return;

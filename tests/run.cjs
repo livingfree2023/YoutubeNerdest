@@ -31,6 +31,7 @@ async function main() {
     assert.match(dom.window.document.title, /^PASS/, 'Module verification did not pass');
     await checkSavedOff(source);
     checkAnimations(source);
+    await require('./quality.cjs')(source);
   } finally {
     dom.window.dispatchEvent(new dom.window.PageTransitionEvent('pagehide'));
     dom.window.close();

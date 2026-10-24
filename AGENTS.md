@@ -7,6 +7,8 @@ Tampermonkey enhancement for YouTube Stats for nerds.
 - Animated toggle and close refinement: `specs/2026-10-23-animated-toggle/`.
 - Current fix: `specs/2026-10-23-chart-history/`.
 - Update metadata and distribution: `specs/2026-10-23-auto-update/`.
+- Approved resolution switcher: `specs/2026-10-23-resolution-switcher/`.
+- Enhancer theme badge compatibility: `specs/2026-10-23-theme-badges/`.
 - Static preview: `docs/prototype/compact-stats.html`.
 - Obtain visual approval before production implementation.
 - Read the existing stats DOM; do not request external data or alter playback.
