@@ -11,8 +11,8 @@
 - [x] Implement native quality row, integer Mbps and effective-resolution badge with lifecycle protection.
 - [x] Add 37 quality module checks; all 96 local assertions pass.
 - [x] Update docs and local retrospective; audit and remove research files.
-- [-] Commit, push and verify combined v1.2.1; user has explicitly authorized publication.
+- [x] Commit, push and verify combined v1.2.1 after explicit user authorization.
 
 ## Handover
 
-Implemented the quality feature after prototype approval; the subsequent theme refinement bumps the combined update to v1.2.1 (see `../2026-10-23-theme-badges/`). Native availability and a 4K native-menu selection verified; actual source reveals old setter is a no-op and range setter is required. All 96 local assertions pass, including 37 quality-specific checks. Source preserves native chart geometry, native close and animations. Docs and ignored blog are updated; temporary research source removed. The initial publication request was rejected for missing explicit authorization; the user's subsequent “ok, push” now supplies that authorization. Next commit/push and verify the latest raw download. Installed-Tampermonkey integration remains unverified; do not conflate native-menu/source probes with script end-to-end testing.
+Published combined v1.2.1 in `2494f45`, including the subsequent theme refinement (see `../2026-10-23-theme-badges/`). Preserved newer remote README edits through rebase and verified the public raw source. Native availability and a 4K native-menu selection were verified; actual source reveals old setter is a no-op and range setter is required. All 96 local assertions pass, including 37 quality-specific checks. Source preserves native chart geometry, native close and animations. Docs and ignored blog are updated; temporary research source removed. The initial missing publication authorization was resolved by the user's explicit “ok, push”. Installed-Tampermonkey integration remains unverified; do not conflate native-menu/source probes with script end-to-end testing.
