@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YouTube Nerdest
-// @name:zh      YouTube Nerdest 油管速度快捷切换分辨率
-// @name:zh-CN   YouTube Nerdest 油管速度快捷切换分辨率
+// @name         YouTube Stat for Nerdest with resolution quick switch
+// @name:zh      油管速度显示和快捷切换分辨率
+// @name:zh-CN   油管速度显示和快捷切换分辨率
 // @namespace    YoutubeNerdest
 // @version      1.2.2
 // @license      MIT
