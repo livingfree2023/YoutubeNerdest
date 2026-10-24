@@ -1,6 +1,6 @@
 # YouTube Nerdest
 
-A Tampermonkey script that folds YouTube’s **Stats for nerds** into a small display of whole-number Mbps and the current resolution.
+A Tampermonkey script that folds YouTube’s **Stats for nerds** into a small display of whole-number Mbps and the current resolution (compatible with all Enhancer for Youtube themes).
 
 **Compact**
 
